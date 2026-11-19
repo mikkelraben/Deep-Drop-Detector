@@ -22,21 +22,17 @@ from pathlib import Path
 import librosa
 import numpy as np
 from scipy.signal import butter, sosfilt
+from src.constants import *
 
 # --- Configuration Constants ---
-SR = 22_050
-FPS = 10
-HOP = SR // FPS        # 2205 samples = 0.1 s per frame
 N_FFT = 4096           # longer than HOP, so no audio between frames is skipped
 N_MELS = 128
 SPLITS = {"train": 0.70, "val": 0.15, "test": 0.15}
-SEED = 42
 
 # Augmentation default parameters
 SPEED_FACTOR = 0.15   # 15% speed change (1.15x fast, 0.85x slow)
 PITCH_STEPS = 1.5     # 1.5 semitones pitch change
 NOISE_DB = -10.0      # Background noise level relative to song RMS in dB
-
 
 def compress_audio(y):
     """Apply soft dynamic range compression."""

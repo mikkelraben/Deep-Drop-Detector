@@ -3,7 +3,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
-from dataset import N_CLASSES, CustomDataset
+from src.dataset import N_CLASSES, CustomDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
