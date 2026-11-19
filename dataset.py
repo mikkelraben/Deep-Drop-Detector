@@ -14,6 +14,7 @@ import pickle
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+from augmenter import Augmenter
 
 FPS = 10                      # frames per second in songs_10fps.pkl
 WINDOW = 300                  # frames per sample (30 s)
@@ -21,6 +22,7 @@ BUCKET = FPS // 2             # 0.5 s per class
 N_CLASSES = 11
 PAD_DB = -80.0                # silence, used before the song starts
 PKL = os.path.join(os.path.dirname(__file__), "songs_10fps.pkl")
+AUG_PKL = os.path.join(os.path.dirname(__file__), "songs_10fps_augmented.pkl")
 
 
 def frame_labels(n_frames, drops):
@@ -42,13 +44,20 @@ class CustomDataset(Dataset):
     stride: take a window ending at every `stride`-th frame. Windows near a
     drop (labels 1-10) are always all kept, so a larger stride only thins out
     the "no drop" windows.
+    augmentation: if True, include augmented versions of the songs.
     """
 
-    def __init__(self, split="train", stride=1, path=PKL):
+    def __init__(self, split="train", stride=1, path=PKL, aug_path=AUG_PKL, seed=42, augmentation=False):
         with open(path, "rb") as f:
             songs = [s for s in pickle.load(f) if s["split"] == split]
         if not songs:
             raise ValueError(f"no songs in split {split!r}")
+
+        if augmentation:
+            # One random augmented copy per song, added next to the originals.
+            # Only songs of this split are augmented, so nothing leaks across splits.
+            augmenter = Augmenter(augmented_path=aug_path, seed=seed)
+            songs = songs + [augmenter.augment(s) for s in songs]
 
         self.names = [s["name"] for s in songs]
         # Pad WINDOW - 1 silent frames in front, so drops in the first 30 s
@@ -81,3 +90,13 @@ class CustomDataset(Dataset):
         counts = np.bincount(self.labels, minlength=N_CLASSES).astype(np.float64)
         w = counts.sum() / (N_CLASSES * np.maximum(counts, 1))
         return torch.tensor(w, dtype=torch.float32)
+
+def test_augmentation():
+    plain = CustomDataset(split="train", augmentation=False)
+    aug = CustomDataset(split="train", augmentation=True)
+    print(f"songs:   {len(plain.mels)} -> {len(aug.mels)}")
+    print(f"windows: {len(plain)} -> {len(aug)} (x{len(aug) / len(plain):.2f})")
+
+
+if __name__ == "__main__":
+    test_augmentation()
