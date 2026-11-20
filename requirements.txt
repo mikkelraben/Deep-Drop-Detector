@@ -1,5 +1,6 @@
 librosa
 matplotlib
 numpy
+scikit-learn
+scipy
 torch
-transformers
