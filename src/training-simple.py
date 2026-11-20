@@ -3,9 +3,12 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
-from src.dataset import N_CLASSES, CustomDataset
+from dataset import N_CLASSES, CustomDataset
+from constants import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+TRAIN_IMG_PATH = ROOT_DIR / "outputs" / "training.png"
+CHECKPOINT_PATH = ROOT_DIR / "outputs" / "drop_detector.pt"
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
@@ -74,15 +77,15 @@ for epoch in range(100):
 
     if val_f1 > best_f1:
         best_f1 = val_f1
-        torch.save(net.state_dict(), "drop_detector.pt")
+        torch.save(net.state_dict(), CHECKPOINT_PATH)
 
 plt.plot(train_losses, label="train")
 plt.plot(val_losses, label="validation")
 plt.xlabel("epoch")
 plt.ylabel("loss")
 plt.legend()
-plt.savefig("training.png")
+plt.savefig(TRAIN_IMG_PATH)
 
-net.load_state_dict(torch.load("drop_detector.pt"))
+net.load_state_dict(torch.load(CHECKPOINT_PATH))
 test_loss, test_f1, test_drop_f1 = evaluate(test_loader)
 print(f"Test Loss: {test_loss:.4f}, Test F1: {test_f1:.3f}, Test Drop F1: {test_drop_f1:.3f}")

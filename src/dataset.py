@@ -13,8 +13,8 @@ import pickle
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from src.augmenter import Augmenter
-from src.constants import *
+from augmenter import Augmenter
+from constants import *
 
 WINDOW = 300                  # frames per sample (30 s)
 BUCKET = FPS // 2             # 0.5 s per class

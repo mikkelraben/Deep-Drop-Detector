@@ -6,7 +6,7 @@ import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
-from src.constants import *
+from constants import *
 
 
 def load_pickle(filepath: str) -> list:

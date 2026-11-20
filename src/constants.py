@@ -1,9 +1,9 @@
 from pathlib import Path
 
-SRC_DIR = Path(__file__).resolve().parent
+ROOT_DIR = Path(__file__).resolve().parent.parent
 
-PKL = SRC_DIR.parent / "data" / "songs_10fps.pkl"
-AUG_PKL = SRC_DIR.parent / "data" / "songs_10fps_augmented.pkl"
+PKL = ROOT_DIR / "data" / "songs_10fps.pkl"
+AUG_PKL = ROOT_DIR / "data" / "songs_10fps_augmented.pkl"
 
 SR = 22_050
 FPS = 10

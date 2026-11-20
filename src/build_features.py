@@ -22,7 +22,11 @@ from pathlib import Path
 import librosa
 import numpy as np
 from scipy.signal import butter, sosfilt
-from src.constants import *
+from constants import *
+
+WAV_DIR_PATH = ROOT_DIR / "data" / "wav"
+LABEL_PATH = WAV_DIR_PATH / "drop_labels.json"
+BG_NOISE_PATH = WAV_DIR_PATH.parent / "bg_noise.wav"
 
 # --- Configuration Constants ---
 N_FFT = 4096           # longer than HOP, so no audio between frames is skipped
@@ -118,18 +122,15 @@ def validate_drops(drops, length, key):
 
 
 def main():
-    tracks_path = Path("wav/drop_labels.json")
-    if not tracks_path.exists():
-        print(f"Metadata file {tracks_path} not found. Exiting.")
+    if not LABEL_PATH.exists():
+        print(f"Metadata file {LABEL_PATH} not found. Exiting.")
         return
-
-    bg_noise_path = Path("bg_noise.wav")
-    if not bg_noise_path.exists():
-        print(f"Background noise file {bg_noise_path} not found. Exiting.")
+    if not BG_NOISE_PATH.exists():
+        print(f"Background noise file {BG_NOISE_PATH} not found. Exiting.")
         return
-    y_bg_noise, _ = librosa.load(bg_noise_path, sr=SR, mono=True)
+    y_bg_noise, _ = librosa.load(BG_NOISE_PATH, sr=SR, mono=True)
 
-    with open(tracks_path, encoding="utf-8") as f:
+    with open(LABEL_PATH, encoding="utf-8") as f:
         tracks = json.load(f)["tracks"]
     keys = sorted(k for k, tr in tracks.items() if tr["status"] in ("done", "no_drop"))
 
@@ -146,7 +147,7 @@ def main():
     augmentation_types = ["speed_up", "speed_down", "pitch_up", "pitch_down", "compressed", "telephone", "background_noise"]
 
     for i, key in enumerate(keys):
-        wav_path = Path("wav") / f"{Path(key).stem}.wav"
+        wav_path = WAV_DIR_PATH / f"{Path(key).stem}.wav"
         if not wav_path.exists():
             print(f"missing audio, skipped: {wav_path}")
             continue
@@ -178,12 +179,12 @@ def main():
                 "augmentation": aug_type
             })
 
-    with open("songs_10fps.pkl", "wb") as f:
+    with open(PKL, "wb") as f:
         pickle.dump(songs_original, f)
     counts = {s: sum(x["split"] == s for x in songs_original) for s in SPLITS}
     print(f"\nWrote songs_10fps.pkl: {len(songs_original)} songs {counts}")
 
-    with open("songs_10fps_augmented.pkl", "wb") as f:
+    with open(AUG_PKL, "wb") as f:
         pickle.dump(songs_augmented, f)
     print(f"Wrote songs_10fps_augmented.pkl: {len(songs_augmented)} augmented samples ({len(augmentation_types)} per track).")
 

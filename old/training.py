@@ -13,7 +13,7 @@ import torch.nn as nn
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 
-from src.dataset import N_CLASSES, CustomDataset
+from dataset import N_CLASSES, CustomDataset
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
