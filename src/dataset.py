@@ -8,22 +8,18 @@ label says how soon the next drop comes after that last frame:
     ...
     10     drop 4.5-5 s ahead
 """
-import os
 import pickle
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 from augmenter import Augmenter
+from constants import *
 
-FPS = 10                      # frames per second in songs_10fps.pkl
 WINDOW = 300                  # frames per sample (30 s)
 BUCKET = FPS // 2             # 0.5 s per class
 N_CLASSES = 11
 PAD_DB = -80.0                # silence, used before the song starts
-PKL = os.path.join(os.path.dirname(__file__), "songs_10fps.pkl")
-AUG_PKL = os.path.join(os.path.dirname(__file__), "songs_10fps_augmented.pkl")
-
 
 def frame_labels(n_frames, drops):
     """Class for every possible window end frame 0..n_frames-1 of one song."""

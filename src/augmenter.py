@@ -6,10 +6,7 @@ import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
-
-SR = 22050
-FPS = 10
-HOP = SR // FPS        # 2205 samples = 0.1 s per frame
+from constants import *
 
 
 def load_pickle(filepath: str) -> list:
@@ -19,7 +16,7 @@ def load_pickle(filepath: str) -> list:
 
 def test_augmenter(
     aug: "Augmenter",
-    songs_path: str = "songs_10fps.pkl",
+    songs_path: str = PKL,
     song: dict | None = None,
     ncols: int = 2,
 ):
@@ -85,7 +82,7 @@ class Augmenter:
 
     def __init__(
         self,
-        augmented_path: str = "songs_10fps_augmented.pkl",
+        augmented_path: str = AUG_PKL,
         seed: int = 42,
     ):
         self.rng = random.Random(seed)
