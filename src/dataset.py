@@ -1,12 +1,12 @@
 """Training windows for the drop detector, cut from songs_10fps.pkl (see build_features.py).
 
-One sample is the 300 frames (30 s) up to and including frame `end`, and its
-label says how soon the next drop comes after that last frame:
-    0      no drop within the next 5 s
-    1      drop 0-0.5 s ahead (including a drop on the last frame itself)
-    2      drop 0.5-1 s ahead
+One sample is the `window` frames (default 300 = 30 s) up to and including frame
+`end`, and its label says how soon the next drop comes after that last frame:
+    0      no drop within the next 10 s
+    1      drop 0-1 s ahead (including a drop on the last frame itself)
+    2      drop 1-2 s ahead
     ...
-    10     drop 4.5-5 s ahead
+    10     drop 9-10 s ahead
 """
 import pickle
 
@@ -17,8 +17,8 @@ from augmenter import Augmenter, load_pickle
 from constants import *
 
 WINDOW = 300                  # frames per sample (30 s)
-BUCKET = FPS // 2             # 0.5 s per class
-N_CLASSES = 11
+BUCKET = FPS                  # 1 s per class
+N_CLASSES = 11                # "no drop" + 10 one-second classes = a 10 s warning window
 PAD_DB = -80.0                # silence, used before the song starts
 
 def frame_labels(n_frames, drops):
@@ -27,7 +27,7 @@ def frame_labels(n_frames, drops):
     # Later drops first, so a nearer drop overwrites a farther one.
     for d in sorted(drops, reverse=True):
         drop_frame = round(d * FPS)
-        for ahead in range(BUCKET * (N_CLASSES - 1)):     # 0..49 frames = 0..4.9 s
+        for ahead in range(BUCKET * (N_CLASSES - 1)):     # 0..99 frames = 0..9.9 s
             end = drop_frame - ahead
             if 0 <= end < n_frames:
                 labels[end] = 1 + ahead // BUCKET

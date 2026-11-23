@@ -1,4 +1,4 @@
-"""Train the drop detector: is a drop coming within the next 5 seconds?
+"""Train the drop detector: is a drop coming within the next 10 seconds?
 
 Usage: python src/training.py [--no-aug]
 Uses every GPU: the script starts itself once per GPU (with torchrun), and each
@@ -6,7 +6,7 @@ copy trains on its share of every batch. The songs are kept on the GPUs, so the
 CPU does almost nothing.
 
 The model looks at the last 60 s of a song and says how far away the next drop is
-(11 classes: no drop within 5 s, or which half second it is in). We use it as a
+(11 classes: no drop within 10 s, or which second it is in). We use it as a
 warning: warn when P(no drop) is below a threshold, and keep the warning on for 2 s.
 The threshold is picked on the validation songs: warn about as many drops as
 possible with at most 15 false alarms per hour.
@@ -46,10 +46,10 @@ AUGMENT = "--no-aug" not in sys.argv
 SUFFIX = "" if AUGMENT else "_noaug"
 CHECKPOINT_PATH = ROOT_DIR / "outputs" / f"drop_detector_rune{SUFFIX}.pt"
 TRAIN_IMG_PATH = ROOT_DIR / "outputs" / f"training{SUFFIX}.png"
-EPOCHS = 5
+EPOCHS = 20
 WINDOW = 600 # frames the model sees (60 s)
 BATCH = 512 # windows per training step, split over the GPUs
-LR = 4e-4
+LR = 4e-5
 STRIDE = 3 # training keeps 1 in 3 "no drop" windows (all windows near a drop are kept)
 HOLD = 2 * FPS # keep a warning on for 2 s (20 frames), so it does not flicker on and off
 MAX_FALSE_ALARMS = 15 # per hour, on the validation songs
@@ -129,13 +129,13 @@ def runs(mask):
 
 def alarm_report(warn, drop, songs):
     """How the warnings work as an alarm. A drop counts as warned if the warning is on
-    at some point in the 5 s before it. A warning that is on without any drop coming
-    within 5 s is a false alarm.
+    at some point in the 10 s before it. A warning that is on without any drop coming
+    within 10 s is a false alarm.
     Returns (share of drops warned, median seconds of warning, false alarms per hour)."""
     warned, ahead, false_alarms, n_drops = 0, [], 0, 0
     for s in np.unique(songs):
         w, d = warn[songs == s], drop[songs == s]
-        for a, b in runs(d): # the 5 s before one drop; window b - 1 ends right on the drop
+        for a, b in runs(d): # the 10 s before one drop; window b - 1 ends right on the drop
             n_drops += 1
             on = np.flatnonzero(w[a:b])
             if len(on) > 0:
@@ -165,7 +165,7 @@ val_ds = CustomDataset("val", stride=1, window=WINDOW)
 test_ds = CustomDataset("test", stride=1, window=WINDOW)
 val = val_ds.device_tensors(device)
 test = test_ds.device_tensors(device)
-val_drop = val[2].cpu().numpy() > 0 # is a drop coming within 5 s?
+val_drop = val[2].cpu().numpy() > 0 # is a drop coming within 10 s?
 test_drop = test[2].cpu().numpy() > 0
 val_songs = val_ds.index[:, 0] # which song each window is from
 test_songs = test_ds.index[:, 0]
