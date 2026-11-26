@@ -21,6 +21,7 @@ outputs/drop_detector_rune_noaug.pt and outputs/training_noaug.png instead.
 Saves the best model to outputs/drop_detector_rune.pt and the loss curves to outputs/training.png,
 then prints how well it warns about the drops in the test songs.
 """
+import contextlib
 import os
 import sys
 
@@ -49,6 +50,7 @@ TRAIN_IMG_PATH = ROOT_DIR / "outputs" / f"training{SUFFIX}.png"
 EPOCHS = 20
 WINDOW = 600 # frames the model sees (60 s)
 BATCH = 512 # windows per training step, split over the GPUs
+CHUNK = 128 # windows per forward/backward pass on one GPU (memory); gradients are summed up to BATCH
 LR = 4e-5
 STRIDE = 3 # training keeps 1 in 3 "no drop" windows (all windows near a drop are kept)
 HOLD = 2 * FPS # keep a warning on for 2 s (20 frames), so it does not flicker on and off
@@ -102,8 +104,8 @@ def evaluate(data):
     model.eval()
     total, p_no_drop = 0.0, []
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16):
-        for i in range(first, last, 1024):
-            j = min(i + 1024, last)
+        for i in range(first, last, CHUNK * 2):
+            j = min(i + CHUNK * 2, last)
             out = model(windows(frames, starts[i:j], WINDOW)).float()
             total += loss_fn(out, labels[i:j]).item() * (j - i)
             p_no_drop.append(out.softmax(1)[:, 0].cpu().numpy())
@@ -127,25 +129,50 @@ def runs(mask):
     return zip(np.flatnonzero(change == 1), np.flatnonzero(change == -1))
 
 
-def alarm_report(warn, drop, songs):
+def alarm_counts(warn, drop, songs):
     """How the warnings work as an alarm. A drop counts as warned if the warning is on
-    at some point in the 10 s before it. A warning that is on without any drop coming
-    within 10 s is a false alarm.
-    Returns (share of drops warned, median seconds of warning, false alarms per hour)."""
+    at some point in the 10 s before it. Every stretch of time the warning is on while
+    no drop is coming within 10 s is a false alarm - also when the same warning later
+    runs on into a drop, so warning all the time does not pay. The HOLD frames right
+    after a drop are allowed, since a held warning always runs on past its drop.
+    Returns (drops warned, drops, seconds of warning for each warned drop, false alarms)."""
+    allowed = hold(drop, songs) # a drop is coming, or one just happened
     warned, ahead, false_alarms, n_drops = 0, [], 0, 0
     for s in np.unique(songs):
-        w, d = warn[songs == s], drop[songs == s]
+        w, d, ok = warn[songs == s], drop[songs == s], allowed[songs == s]
         for a, b in runs(d): # the 10 s before one drop; window b - 1 ends right on the drop
             n_drops += 1
             on = np.flatnonzero(w[a:b])
             if len(on) > 0:
                 warned += 1
                 ahead.append((b - 1 - a - on[0]) / FPS)
-        for a, b in runs(w): # one warning, from when it turns on until it turns off
-            if not d[a:b].any():
-                false_alarms += 1
+        false_alarms += len(list(runs(w & ~ok))) # warning on with no drop coming
+    return warned, n_drops, ahead, false_alarms
+
+
+def alarm_report(warn, drop, songs):
+    """(share of drops warned, median seconds of warning, false alarms per hour); see alarm_counts."""
+    warned, n_drops, ahead, false_alarms = alarm_counts(warn, drop, songs)
     hours = len(warn) / FPS / 3600
     return warned / n_drops, np.median(ahead) if ahead else 0.0, false_alarms / hours
+
+
+def f1(precision, recall):
+    return 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0.0
+
+
+def f1_scores(p_no_drop, threshold, drop, songs):
+    """Two F1 scores at one threshold.
+    Event F1: recall = share of drops warned; precision = warned drops / (warned drops +
+    false alarms), i.e. the share of alarms that were followed by a real drop.
+    Window F1: every window on its own, without the 2 s hold: is P(no drop) < threshold
+    right about "a drop is coming within 10 s"?"""
+    warned, n_drops, _, false_alarms = alarm_counts(hold(p_no_drop < threshold, songs), drop, songs)
+    event = f1(warned / max(warned + false_alarms, 1), warned / n_drops)
+    pred = p_no_drop < threshold
+    hits = (pred & drop).sum()
+    window = f1(hits / max(pred.sum(), 1), hits / max(drop.sum(), 1))
+    return event, window
 
 
 def choose_threshold(p_no_drop, drop, songs):
@@ -193,15 +220,20 @@ for epoch in range(EPOCHS):
     for x_minibatch, y_minibatch in batches(train, shuffle=True):
         if AUGMENT:
             x_minibatch = augment(x_minibatch) # random loudness and masked-out bits, so the model can't memorize songs
-        with torch.autocast("cuda", dtype=torch.float16): # fp16: about twice as fast
-            y_pred = net(x_minibatch)
-            loss = loss_fn(y_pred, y_minibatch)
-
+        # The minibatch goes through in chunks of CHUNK windows to fit in GPU memory; the
+        # gradients add up, so the step is the same as for the whole minibatch at once.
         net.zero_grad()
-        scaler.scale(loss).backward()
+        n = len(y_minibatch)
+        for k in range(0, n, CHUNK):
+            x, y = x_minibatch[k:k + CHUNK], y_minibatch[k:k + CHUNK]
+            last = k + CHUNK >= n
+            with (contextlib.nullcontext() if last else net.no_sync()): # sync gradients over the GPUs once, at the end
+                with torch.autocast("cuda", dtype=torch.float16): # fp16: about twice as fast
+                    loss = loss_fn(net(x), y) * (len(y) / n) # this chunk's share of the minibatch mean
+                scaler.scale(loss).backward()
+            running += loss.detach() * n # no .item() here: it would make the CPU wait for the GPU
         scaler.step(optimizer)
         scaler.update()
-        running += loss.detach() * len(y_minibatch) # no .item() here: it would make the CPU wait for the GPU
 
     dist.all_reduce(running) # add up the GPUs
     train_losses.append(running.item() / len(train[2]))
@@ -212,8 +244,10 @@ for epoch in range(EPOCHS):
         if warned > best_warned:
             best_warned, threshold = warned, epoch_threshold
             torch.save(model.state_dict(), CHECKPOINT_PATH)
+        event_f1, window_f1 = f1_scores(p_no_drop, epoch_threshold, val_drop, val_songs)
         print(f"Epoch {epoch}, Loss: {train_losses[-1]:.4f}, Val loss: {val_loss:.4f}, Val: {warned:.0%} of drops warned, "
-              f"median {ahead:.1f} s ahead, {false_alarms:.1f} false alarms per hour, threshold {epoch_threshold:.2g}", flush=True)
+              f"median {ahead:.1f} s ahead, {false_alarms:.1f} false alarms per hour, threshold {epoch_threshold:.2g}, "
+              f"event F1 {event_f1:.3f}, window F1 {window_f1:.3f}", flush=True)
 
 if main:
     plt.plot(train_losses, label="train")
@@ -229,6 +263,8 @@ test_loss, p_no_drop = evaluate(test)
 if main:
     warn = hold(p_no_drop < threshold, test_songs)
     warned, ahead, false_alarms = alarm_report(warn, test_drop, test_songs)
+    event_f1, window_f1 = f1_scores(p_no_drop, threshold, test_drop, test_songs)
     print(f"Test loss {test_loss:.4f}, threshold {threshold:.2g}: {warned:.0%} of drops warned, "
-          f"median {ahead:.1f} s ahead, {false_alarms:.1f} false alarms per hour")
+          f"median {ahead:.1f} s ahead, {false_alarms:.1f} false alarms per hour, "
+          f"event F1 {event_f1:.3f}, window F1 {window_f1:.3f}")
 dist.destroy_process_group()

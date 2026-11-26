@@ -1,0 +1,6 @@
+log,threshold,warned,ahead,false_alarms,event_f1,window_f1,macro_f1
+outputs/training_run4.log,0.03642,0.7615,6.90,15.11,0.6776,0.5105,0.2100
+outputs/training_run6.log,0.05837,0.7431,6.40,17.96,0.6403,0.4862,0.2175
+outputs/training_run7.log,0.008843,0.7339,5.55,19.38,0.6226,0.4839,0.1704
+outputs/training_run8_noaug.log,0.03642,0.7064,7.00,13.11,0.6638,0.4562,0.1859
+outputs/training_run5.log,0.01795,0.8440,12.10,19.67,0.6815,0.5218,0.1459
