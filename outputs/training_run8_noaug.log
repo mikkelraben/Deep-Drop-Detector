@@ -1,0 +1,22 @@
+augmentation off: train 232245 windows in 240 song versions, val 127733, test 126285 windows on 1 GPUs
+Epoch 0, Loss: 1.0035, Val loss: 0.4332, Val: 32% of drops warned, median 3.6 s ahead, 13.5 false alarms per hour, threshold 0.15, event F1 0.364, window F1 0.113
+Epoch 1, Loss: 0.8258, Val loss: 0.4065, Val: 46% of drops warned, median 4.2 s ahead, 12.4 false alarms per hour, threshold 0.12, event F1 0.487, window F1 0.163
+Epoch 2, Loss: 0.7494, Val loss: 0.3891, Val: 67% of drops warned, median 6.5 s ahead, 12.7 false alarms per hour, threshold 0.094, event F1 0.636, window F1 0.407
+Epoch 3, Loss: 0.6918, Val loss: 0.3866, Val: 70% of drops warned, median 5.9 s ahead, 10.7 false alarms per hour, threshold 0.058, event F1 0.676, window F1 0.416
+Epoch 4, Loss: 0.6598, Val loss: 0.3768, Val: 72% of drops warned, median 6.1 s ahead, 13.0 false alarms per hour, threshold 0.058, event F1 0.670, window F1 0.434
+Epoch 5, Loss: 0.6343, Val loss: 0.3875, Val: 74% of drops warned, median 5.5 s ahead, 11.8 false alarms per hour, threshold 0.036, event F1 0.693, window F1 0.416
+Epoch 6, Loss: 0.6114, Val loss: 0.3975, Val: 76% of drops warned, median 6.1 s ahead, 13.8 false alarms per hour, threshold 0.036, event F1 0.684, window F1 0.452
+Epoch 7, Loss: 0.5895, Val loss: 0.4252, Val: 75% of drops warned, median 5.7 s ahead, 14.1 false alarms per hour, threshold 0.023, event F1 0.675, window F1 0.450
+Epoch 8, Loss: 0.5713, Val loss: 0.4046, Val: 71% of drops warned, median 5.7 s ahead, 13.0 false alarms per hour, threshold 0.023, event F1 0.664, window F1 0.430
+Epoch 9, Loss: 0.5527, Val loss: 0.4124, Val: 69% of drops warned, median 5.9 s ahead, 14.4 false alarms per hour, threshold 0.023, event F1 0.632, window F1 0.434
+Epoch 10, Loss: 0.5370, Val loss: 0.4374, Val: 70% of drops warned, median 5.8 s ahead, 13.8 false alarms per hour, threshold 0.014, event F1 0.649, window F1 0.440
+Epoch 11, Loss: 0.5188, Val loss: 0.4374, Val: 69% of drops warned, median 6.5 s ahead, 13.0 false alarms per hour, threshold 0.014, event F1 0.646, window F1 0.442
+Epoch 12, Loss: 0.5046, Val loss: 0.4506, Val: 70% of drops warned, median 6.1 s ahead, 14.1 false alarms per hour, threshold 0.011, event F1 0.646, window F1 0.440
+Epoch 13, Loss: 0.4898, Val loss: 0.4601, Val: 70% of drops warned, median 6.2 s ahead, 14.7 false alarms per hour, threshold 0.0088, event F1 0.635, window F1 0.447
+Epoch 14, Loss: 0.4766, Val loss: 0.4596, Val: 67% of drops warned, median 6.2 s ahead, 14.7 false alarms per hour, threshold 0.0088, event F1 0.617, window F1 0.437
+Epoch 15, Loss: 0.4644, Val loss: 0.4607, Val: 66% of drops warned, median 6.7 s ahead, 13.8 false alarms per hour, threshold 0.011, event F1 0.619, window F1 0.441
+Epoch 16, Loss: 0.4519, Val loss: 0.4707, Val: 66% of drops warned, median 6.7 s ahead, 13.8 false alarms per hour, threshold 0.0088, event F1 0.619, window F1 0.429
+Epoch 17, Loss: 0.4427, Val loss: 0.4826, Val: 66% of drops warned, median 6.7 s ahead, 13.8 false alarms per hour, threshold 0.0088, event F1 0.619, window F1 0.438
+Epoch 18, Loss: 0.4305, Val loss: 0.5015, Val: 64% of drops warned, median 7.1 s ahead, 14.9 false alarms per hour, threshold 0.0044, event F1 0.596, window F1 0.446
+Epoch 19, Loss: 0.4218, Val loss: 0.4955, Val: 65% of drops warned, median 7.5 s ahead, 14.9 false alarms per hour, threshold 0.007, event F1 0.602, window F1 0.458
+Test loss 0.4111, threshold 0.036: 71% of drops warned, median 7.0 s ahead, 13.1 false alarms per hour, event F1 0.664, window F1 0.456

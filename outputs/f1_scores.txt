@@ -1,0 +1,23 @@
+metric checks passed
+
+run 4: 1 layer, 60 s window, 10 s horizon (threshold 0.036)
+  val : 81% warned, 5.8 s, 14.9 FA/h | event F1 0.700, window F1 0.517, macro F1 (11 classes) 0.245
+  test: 76% warned, 6.9 s, 15.1 FA/h | event F1 0.678, window F1 0.510, macro F1 (11 classes) 0.210
+
+run 6: 1 layer, 30 s window, 10 s horizon (threshold 0.058)
+  val : 85% warned, 4.9 s, 14.7 FA/h | event F1 0.724, window F1 0.483, macro F1 (11 classes) 0.236
+  test: 74% warned, 6.4 s, 18.0 FA/h | event F1 0.640, window F1 0.486, macro F1 (11 classes) 0.217
+
+run 7: 2 layers, 60 s window, 10 s horizon (threshold 0.0088)
+  val : 78% warned, 4.2 s, 14.9 FA/h | event F1 0.683, window F1 0.403, macro F1 (11 classes) 0.189
+  test: 73% warned, 5.5 s, 19.4 FA/h | event F1 0.623, window F1 0.484, macro F1 (11 classes) 0.170
+
+run 8: run 4 without augmentation (threshold 0.036)
+  val : 76% warned, 6.1 s, 13.8 FA/h | event F1 0.684, window F1 0.452, macro F1 (11 classes) 0.225
+  test: 71% warned, 7.0 s, 13.1 FA/h | event F1 0.664, window F1 0.456, macro F1 (11 classes) 0.186
+
+run 5: 1 layer, 60 s window, 20 s horizon (threshold 0.018)
+  val : 90% warned, 11.6 s, 14.9 FA/h | event F1 0.751, window F1 0.508, macro F1 (21 classes) 0.147
+  test: 84% warned, 12.1 s, 19.7 FA/h | event F1 0.681, window F1 0.522, macro F1 (21 classes) 0.146
+
+wrote /home/mikkel-johan-meldgaard-raben/Code/Deep-Drop-Detector/outputs/test_scores.csv
